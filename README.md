@@ -1,29 +1,43 @@
 # ChatGPT RPC
 
-A tiny Windows tray app that shows ChatGPT and Codex activity as Discord Rich Presence.
+A small Windows tray app that shows ChatGPT and Codex activity as Discord Rich Presence.
 
-No terminal window, no Node process, no Python script sitting open. Build it once and run the `.exe`.
+No terminal window, no Node process, no Python script sitting open. Run the `.exe` and leave it in the tray.
 
-## What it does
+## v0.2.0
 
-- detects ChatGPT Desktop or ChatGPT in a browser
-- detects Codex windows
-- shows Chat or Codex mode in Discord
-- optionally shows the current window/session title
-- keeps an elapsed session timer
-- lives in the Windows system tray
-- can start automatically with Windows
-- stores settings locally in `%LOCALAPPDATA%\\ChatGPT-RPC`
+- dark settings window with a live Discord-style preview
+- tray controls for Settings, DND, startup, activity mode, updates, and quit
+- Playing / Watching / Listening / Competing presence modes
+- optional idle presence
+- optional session title and elapsed time
+- improved ChatGPT / Codex window detection
+- automatic startup with Windows
+- self-contained Windows x64 build
 
 ## Setup
 
 1. Create a Discord application in the Discord Developer Portal.
 2. Copy its **Application ID**.
-3. Run `ChatGPT-RPC.exe` and paste the ID into Settings.
-4. Optional: add a Rich Presence image asset named `chatgpt` in your Discord application.
-5. Keep Discord Desktop open.
+3. Run `ChatGPT-RPC.exe` and open **Settings**.
+4. Paste the Application ID and click **Apply**.
+5. Optional: upload a Rich Presence image asset named `chatgpt` to the Discord application.
+6. Keep Discord Desktop open.
 
-After the first setup, just run the `.exe` (or let it start with Windows).
+After setup, ChatGPT RPC can start with Windows and stay in the system tray.
+
+## Presence controls
+
+Right-click the tray icon to quickly change:
+
+- Do Not Disturb
+- Start on Windows
+- Playing / Watching / Listening / Competing
+- Settings
+- Check for updates
+- Quit
+
+Settings also lets you control idle presence, session titles, elapsed time, and the image asset key.
 
 ## Build
 
@@ -34,23 +48,23 @@ dotnet restore
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
 
-The executable will be under:
+The executable is created at:
 
 ```text
 bin/Release/net9.0-windows/win-x64/publish/ChatGPT-RPC.exe
 ```
 
-GitHub Actions also builds the Windows x64 executable automatically on every push.
+GitHub Actions also builds a Windows x64 artifact automatically on pushes to `main`.
 
 ## Privacy
 
-ChatGPT RPC only checks visible Windows process/window titles to determine whether ChatGPT or Codex is active. It does not read chat messages, browser history, cookies, tokens, or account data.
+ChatGPT RPC only checks visible Windows process and window titles to determine whether ChatGPT or Codex is active. It does not read chat messages, browser history, cookies, login tokens, or account data.
 
-If you do not want the conversation/window title shown publicly on Discord, disable **Show current ChatGPT/Codex window title** in Settings.
+Session-title sharing can be disabled in Settings if you do not want the active window title displayed on Discord.
 
 ## Notes
 
-This project is unofficial and is not affiliated with OpenAI or Discord.
+ChatGPT RPC is unofficial and is not affiliated with OpenAI or Discord.
 
 ## License
 
