@@ -17,8 +17,15 @@ internal sealed class DiscordPresence : IDisposable
         if (string.IsNullOrWhiteSpace(clientId))
             return;
 
-        _client = new DiscordRpcClient(clientId.Trim());
-        _client.Initialize();
+        try
+        {
+            _client = new DiscordRpcClient(clientId.Trim());
+            _client.Initialize();
+        }
+        catch
+        {
+            DisposeClient();
+        }
     }
 
     public void Update(DetectedActivity activity, AppConfig config)
@@ -32,20 +39,37 @@ internal sealed class DiscordPresence : IDisposable
             _lastMode = activity.Mode;
         }
 
+        var fallback = activity.Mode == "Codex" ? "Working with Codex" : "Using ChatGPT";
         var state = config.ShowSessionTitle && !string.IsNullOrWhiteSpace(activity.Title)
             ? activity.Title
-            : activity.Mode == "Codex" ? "Working with Codex" : "Using ChatGPT";
+            : fallback;
 
         _client.SetPresence(new RichPresence
         {
+            Type = ParseActivityType(config.ActivityType),
             Details = activity.Mode == "Codex" ? "Codex · Coding" : "ChatGPT · Chat",
             State = state,
-            Timestamps = new Timestamps(_sessionStart ?? DateTime.UtcNow),
-            Assets = new Assets
-            {
-                LargeImageKey = config.LargeImageKey,
-                LargeImageText = config.LargeImageText
-            }
+            Timestamps = config.ShowElapsedTime
+                ? new Timestamps(_sessionStart ?? DateTime.UtcNow)
+                : null,
+            Assets = BuildAssets(config)
+        });
+    }
+
+    public void UpdateIdle(AppConfig config)
+    {
+        if (_client is null || !_client.IsInitialized)
+            return;
+
+        _sessionStart = null;
+        _lastMode = "Idle";
+
+        _client.SetPresence(new RichPresence
+        {
+            Type = ParseActivityType(config.ActivityType),
+            Details = "ChatGPT RPC",
+            State = "Waiting for ChatGPT / Codex",
+            Assets = BuildAssets(config)
         });
     }
 
@@ -53,7 +77,7 @@ internal sealed class DiscordPresence : IDisposable
     {
         _sessionStart = null;
         _lastMode = null;
-        _client?.ClearPresence();
+        try { _client?.ClearPresence(); } catch { }
     }
 
     public void Dispose()
@@ -61,6 +85,28 @@ internal sealed class DiscordPresence : IDisposable
         DisposeClient();
         GC.SuppressFinalize(this);
     }
+
+    private static Assets? BuildAssets(AppConfig config)
+    {
+        if (string.IsNullOrWhiteSpace(config.LargeImageKey))
+            return null;
+
+        return new Assets
+        {
+            LargeImageKey = config.LargeImageKey.Trim(),
+            LargeImageText = string.IsNullOrWhiteSpace(config.LargeImageText)
+                ? "ChatGPT RPC"
+                : config.LargeImageText.Trim()
+        };
+    }
+
+    private static ActivityType ParseActivityType(string value) => value switch
+    {
+        "Watching" => ActivityType.Watching,
+        "Listening" => ActivityType.Listening,
+        "Competing" => ActivityType.Competing,
+        _ => ActivityType.Playing
+    };
 
     private void DisposeClient()
     {
