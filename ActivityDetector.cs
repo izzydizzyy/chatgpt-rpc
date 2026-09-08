@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace ChatGPTRpc;
 
-internal sealed record DetectedActivity(string Mode, string Title);
+internal sealed record DetectedActivity(string Mode, string Title, string ProcessName);
 
 internal static class ActivityDetector
 {
@@ -22,23 +22,23 @@ internal static class ActivityDetector
                     continue;
 
                 var processName = process.ProcessName;
-                var looksLikeBrowser = BrowserProcesses.Contains(processName, StringComparer.OrdinalIgnoreCase);
-                var looksLikeOpenAIApp =
+                var browser = BrowserProcesses.Contains(processName, StringComparer.OrdinalIgnoreCase);
+                var openAiApp =
                     processName.Contains("chatgpt", StringComparison.OrdinalIgnoreCase) ||
                     processName.Contains("codex", StringComparison.OrdinalIgnoreCase);
 
-                if (!looksLikeBrowser && !looksLikeOpenAIApp)
+                if (!browser && !openAiApp)
                     continue;
 
                 if (title.Contains("Codex", StringComparison.OrdinalIgnoreCase))
-                    return new DetectedActivity("Codex", CleanTitle(title, "Codex"));
+                    return new DetectedActivity("Codex", CleanTitle(title, "Codex"), processName);
 
                 if (title.Contains("ChatGPT", StringComparison.OrdinalIgnoreCase))
-                    return new DetectedActivity("Chat", CleanTitle(title, "ChatGPT"));
+                    return new DetectedActivity("Chat", CleanTitle(title, "ChatGPT"), processName);
             }
             catch
             {
-                // Some Windows processes deny access. Ignore them and keep scanning.
+                // Some Windows processes deny access. Keep scanning.
             }
             finally
             {
@@ -51,11 +51,20 @@ internal static class ActivityDetector
 
     private static string CleanTitle(string title, string appName)
     {
-        var cleaned = title
-            .Replace(" - ChatGPT", "", StringComparison.OrdinalIgnoreCase)
-            .Replace(" — ChatGPT", "", StringComparison.OrdinalIgnoreCase)
-            .Replace(" | ChatGPT", "", StringComparison.OrdinalIgnoreCase)
-            .Trim();
+        var cleaned = title;
+        var suffixes = new[]
+        {
+            " - ChatGPT", " — ChatGPT", " | ChatGPT",
+            " - Codex", " — Codex", " | Codex",
+            " - Google Chrome", " - Microsoft Edge", " — Mozilla Firefox",
+            " - Brave", " - Vivaldi", " - Opera"
+        };
+
+        foreach (var suffix in suffixes)
+        {
+            if (cleaned.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                cleaned = cleaned[..^suffix.Length].Trim();
+        }
 
         if (cleaned.Equals(appName, StringComparison.OrdinalIgnoreCase))
             return "";
