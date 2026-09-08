@@ -7,7 +7,11 @@ internal sealed class AppConfig
     public string ClientId { get; set; } = "";
     public string LargeImageKey { get; set; } = "chatgpt";
     public string LargeImageText { get; set; } = "ChatGPT RPC";
+    public string ActivityType { get; set; } = "Playing";
     public bool ShowSessionTitle { get; set; } = true;
+    public bool ShowElapsedTime { get; set; } = true;
+    public bool IdlePresence { get; set; }
+    public bool DoNotDisturb { get; set; }
     public bool StartWithWindows { get; set; } = true;
     public int PollIntervalSeconds { get; set; } = 2;
 }
